@@ -1,0 +1,53 @@
+import boto3
+import json
+import os
+
+# Hardcoded credentials (security issue)
+AWS_ACCESS_KEY = "AKIAXXXXXXXXXXXXXXXX"
+AWS_SECRET_KEY = "1234567890abcdef1234567890abcdef12345678"
+
+def get_user_data(user_id):
+    # SQL Injection vulnerability
+    query = "SELECT * FROM users WHERE id = " + user_id
+    return execute_query(query)
+
+def process_file(filename):
+    # Resource leak potential
+    f = open(filename, 'r')
+    data = f.read()
+    return data
+
+def save_to_s3(bucket_name, data):
+    # Unsafe S3 bucket permissions
+    s3 = boto3.client('s3')
+    s3.put_object(
+        Bucket=bucket_name,
+        Key='data.txt',
+        Body=data,
+        ACL='public-read'  # Security issue
+    )
+
+def lambda_handler(event, context):
+    try:
+        # Inefficient error handling
+        user_id = event['user_id']
+        filename = event['filename']
+        bucket = event['bucket']
+        
+        data = process_file(filename)
+        user_info = get_user_data(user_id)
+        save_to_s3(bucket, data)
+        
+        return {
+            'statusCode': 200,
+            'body': json.dumps({
+                'message': 'Success',
+                'data': data
+            })
+        }
+    except Exception as e:
+        print(f"Error: {str(e)}")  # Unsafe error logging
+        return {
+            'statusCode': 500,
+            'body': str(e)  # Exposing error details
+        }
