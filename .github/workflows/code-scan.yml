@@ -5,7 +5,6 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
-  # Optional: Run on schedule
   schedule:
     - cron: '0 0 * * 0'  # Weekly on Sundays at midnight
 
@@ -17,7 +16,7 @@ jobs:
     permissions:
       id-token: write  # Required for OIDC authentication
       contents: read   # Required to check out code
-      security-events: write  # If you plan to upload results to GitHub Security tab
+      security-events: write  # Required for uploading results
     
     steps:
       - name: Checkout repository
@@ -33,26 +32,39 @@ jobs:
       
       - name: Run CodeGuru Security Scan
         run: |
-          # Create a CodeGuru Security scan
           SCAN_NAME="security-scan-${GITHUB_SHA::8}"
+          REPOSITORY_NAME="${GITHUB_REPOSITORY#*/}"
           
           # Create the scan
           SCAN_ARN=$(aws codeguru-security create-scan \
             --name "$SCAN_NAME" \
             --analysis-type "Security" \
-            --repository-source "{Branch: \"${GITHUB_REF_NAME}\", Provider: \"GitHub\", RepositoryName: \"${GITHUB_REPOSITORY}\"}" \
-            --source-code-type "GitHub" \
-            --query 'ScanArn' \
-            --output text)
+            --repository-name "$REPOSITORY_NAME" \
+            --branch "${GITHUB_REF_NAME}" \
+            --output json | jq -r '.arn')
           
           echo "Scan ARN: $SCAN_ARN"
           echo "Waiting for scan to complete (this may take several minutes)..."
           
           # Wait for scan to complete
-          aws codeguru-security wait scan-complete --scan-name "$SCAN_NAME"
+          aws codeguru-security get-scan --arn "$SCAN_ARN" --output json | \
+            jq -r '.status' | \
+            while read -r status; do
+              if [ "$status" = "Completed" ]; then
+                break
+              elif [ "$status" = "Failed" ]; then
+                echo "Scan failed"
+                exit 1
+              else
+                echo "Scan status: $status"
+                sleep 60
+              fi
+            done
           
           # Get scan results
-          aws codeguru-security get-findings --scan-name "$SCAN_NAME" > codeguru-findings.json
+          aws codeguru-security get-findings \
+            --scan-arn "$SCAN_ARN" \
+            --output json > codeguru-findings.json
           
           # Display summary of findings
           CRITICAL=$(jq '.findings[] | select(.severity=="Critical") | .id' codeguru-findings.json | wc -l)
@@ -64,19 +76,8 @@ jobs:
           echo "High: $HIGH"
           echo "Medium: $MEDIUM"
           
-          # Optional: Convert findings to SARIF format for GitHub Security tab
-          # This requires a custom conversion script or tool
-          # python3 convert_to_sarif.py codeguru-findings.json > results.sarif
-          
           # Optional: Fail the workflow if critical findings exist
           if [ $CRITICAL -gt 0 ]; then
             echo "Critical security findings detected!"
             exit 1
           fi
-      
-      # Uncomment if you've created a SARIF conversion
-      # - name: Upload SARIF results
-      #   uses: github/codeql-action/upload-sarif@v2
-      #   with:
-      #     sarif_file: results.sarif
-      #     category: codeguru-security
