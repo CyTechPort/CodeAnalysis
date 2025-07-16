@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ main ]
   schedule:
-    - cron: '0 0 * * 0'  # Weekly on Sundays at midnight
+    - cron: '0 0 * * 0'
 
 jobs:
   security-scan:
@@ -14,9 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     
     permissions:
-      id-token: write  # Required for OIDC authentication
-      contents: read   # Required to check out code
-      security-events: write  # Required for uploading results
+      id-token: write
+      contents: read
+      security-events: write
     
     steps:
       - name: Checkout repository
@@ -32,38 +32,44 @@ jobs:
       
       - name: Run CodeGuru Security Scan
         run: |
+          # Set variables
           SCAN_NAME="security-scan-${GITHUB_SHA::8}"
-          REPOSITORY_NAME="${GITHUB_REPOSITORY#*/}"
+          RESOURCE_ID="${GITHUB_REPOSITORY}"
           
-          # Create the scan
-          SCAN_ARN=$(aws codeguru-security create-scan \
-            --name "$SCAN_NAME" \
-            --analysis-type "Security" \
-            --repository-name "$REPOSITORY_NAME" \
-            --branch "${GITHUB_REF_NAME}" \
-            --output json | jq -r '.arn')
+          # Create and start the scan
+          echo "Creating scan with name: $SCAN_NAME and resource ID: $RESOURCE_ID"
+          aws codeguru-security create-scan \
+            --scan-name "$SCAN_NAME" \
+            --resource-id "$RESOURCE_ID" \
+            --type "Security"
           
-          echo "Scan ARN: $SCAN_ARN"
-          echo "Waiting for scan to complete (this may take several minutes)..."
+          echo "Waiting for scan to complete..."
           
-          # Wait for scan to complete
-          aws codeguru-security get-scan --arn "$SCAN_ARN" --output json | \
-            jq -r '.status' | \
-            while read -r status; do
-              if [ "$status" = "Completed" ]; then
-                break
-              elif [ "$status" = "Failed" ]; then
-                echo "Scan failed"
-                exit 1
-              else
-                echo "Scan status: $status"
-                sleep 60
-              fi
-            done
+          # Check scan status
+          while true; do
+            STATUS=$(aws codeguru-security get-scan \
+              --scan-name "$SCAN_NAME" \
+              --resource-id "$RESOURCE_ID" \
+              --query 'status' \
+              --output text)
+            
+            echo "Current status: $STATUS"
+            
+            if [ "$STATUS" = "Completed" ]; then
+              break
+            elif [ "$STATUS" = "Failed" ]; then
+              echo "Scan failed"
+              exit 1
+            fi
+            
+            sleep 30
+          done
           
-          # Get scan results
+          # Get findings
+          echo "Getting scan findings..."
           aws codeguru-security get-findings \
-            --scan-arn "$SCAN_ARN" \
+            --scan-name "$SCAN_NAME" \
+            --resource-id "$RESOURCE_ID" \
             --output json > codeguru-findings.json
           
           # Display summary of findings
@@ -76,7 +82,6 @@ jobs:
           echo "High: $HIGH"
           echo "Medium: $MEDIUM"
           
-          # Optional: Fail the workflow if critical findings exist
           if [ $CRITICAL -gt 0 ]; then
             echo "Critical security findings detected!"
             exit 1
