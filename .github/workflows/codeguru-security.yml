@@ -2,13 +2,11 @@ name: CodeGuru Security Example
 on:
   push:
     branches:
-      - 'main'
+      - 'main'  # Change to 'master' if that's your default branch
 
 permissions:
   id-token: write
-  # for writing security events.
   security-events: write
-  # only required for workflows in private repositories
   actions: read
   contents: read
 
@@ -32,8 +30,9 @@ jobs:
         uses: aws-actions/codeguru-security@v1
         with:
           source_path: .
-          aws_region: us-east-2
+          aws-region: us-east-2
           fail_on_severity: Critical
+
       - name: Print findings
         run: |
           ls -l
