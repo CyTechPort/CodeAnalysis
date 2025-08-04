@@ -30,7 +30,7 @@ jobs:
         uses: aws-actions/codeguru-security@v1
         with:
           source_path: .
-          aws-region: us-east-2
+          aws_region: us-east-2
           fail_on_severity: Critical
 
       - name: Print findings
@@ -42,4 +42,3 @@ jobs:
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: codeguru-security-results.sarif.json
-
