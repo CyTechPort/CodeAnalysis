@@ -81,7 +81,7 @@ import random
 
 def generate_session_token():
     # Vulnerable code - predictable random values
-    return str(random.randint(10000, 99999))  # Not cryptographically secure
+    return str(random.randint(1000, 99999))  # Not cryptographically secure
 
 # Example 10: Sensitive Data Exposure
 def process_payment(credit_card):
