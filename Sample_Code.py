@@ -4,7 +4,7 @@ import os
 
 Print ("Hello, World")
 # Hardcoded credentials (security issue)
-AWS_ACCESS_KEY = "AKIAXXXXXXXXXXXX"
+AWS_ACCESS_KEY = "AKIAXXXXXXXXXXXXX"
 AWS_SECRET_KEY = "1234567890abcdef1234567890abcdef12345678"
 
 def get_user_data(user_id):
