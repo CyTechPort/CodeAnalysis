@@ -42,3 +42,24 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: codeguru-security-results.sarif.json
+          
+      - name: Trigger Enhanced Analysis Pipeline
+        run: |
+          aws events put-events --entries '[{
+            "Source": "custom.codeguru",
+            "DetailType": "CodeGuru Security Scan Complete",
+            "Detail": "{\"scanName\":\"CGS-Github-CodeAnalysis\",\"state\":\"COMPLETED\"}"
+          }]'
+        env:
+          AWS_REGION: us-east-2
+          
+      - name: Wait for Analysis Processing
+        run: |
+          echo "Waiting 30 seconds for Lambda processing..."
+          sleep 30
+          
+      - name: Check Analysis Results
+        run: |
+          echo "Enhanced analysis reports should be available at:"
+          echo "JSON: s3://code-analysis-results-362631904613-dev/enhanced_findings/CGS-Github-CodeAnalysis.json"
+          echo "HTML: s3://code-analysis-results-362631904613-dev/enhanced_findings/CGS-Github-CodeAnalysis.html"
