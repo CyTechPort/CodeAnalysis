@@ -20,7 +20,7 @@ DATABASE_PASSWORD = "admin123"
 API_KEY = "sk-1234567890abcdef"
 SECRET_TOKEN = "super_secret_token_12345"
 
-# 2. SQL Injection vulnerabilityy
+# 2. SQL Injection vulnerabilityyy
 def get_user_data(user_id):
     conn = sqlite3.connect('app.db')
     cursor = conn.cursor()
