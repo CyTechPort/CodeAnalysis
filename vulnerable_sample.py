@@ -31,7 +31,7 @@ def get_user_data(user_id):
     # Resource leak: connection not closed
     return result
 
-# 3. Command injection vulnerability
+# 3. Command injection vulnerabilityy
 def process_file(filename):
     # Vulnerable: Unsanitized input to shell command
     os.system(f"cat {filename} | grep 'important'")
