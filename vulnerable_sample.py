@@ -88,12 +88,6 @@ def process_log_file(log_path):
     # Missing f.close() - resource leak
     return len(data)
 
-# 12. Sensitive data in logs
-def authenticate_user(username, password):
-    print(f"Login attempt: {username}:{password}")  # Vulnerable: Password in logs
-    if username == "admin" and password == DATABASE_PASSWORD:
-        return True
-    return False
 
 # 13. Unsafe eval usage
 def calculate_expression(expr):
