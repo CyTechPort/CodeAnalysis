@@ -31,6 +31,7 @@ jobs:
         with:
           source_path: .
           aws_region: us-east-2
+          scan_name: CGS-Github-${{ github.event.repository.name }}-$(git diff --name-only HEAD~1 HEAD | head -1 | xargs basename | cut -d. -f1)-${{ github.run_number }}
 
       - name: Print findings
         run: |
@@ -47,7 +48,7 @@ jobs:
           aws events put-events --entries '[{
             "Source": "custom.codeguru",
             "DetailType": "CodeGuru Security Scan Complete",
-            "Detail": "{\"scanName\":\"CGS-Github-CodeAnalysis\",\"state\":\"COMPLETED\"}"
+            "Detail": "{\"scanName\":\"CGS-Github-${{ github.event.repository.name }}-$(git diff --name-only HEAD~1 HEAD | head -1 | xargs basename | cut -d. -f1)-${{ github.run_number }}\",\"state\":\"COMPLETED\"}"
           }]'
         env:
           AWS_REGION: us-east-2
@@ -60,5 +61,5 @@ jobs:
       - name: Check Analysis Results
         run: |
           echo "Enhanced analysis reports should be available at:"
-          echo "JSON: s3://code-analysis-results-362631904613-dev/enhanced_findings/CGS-Github-CodeAnalysis.json"
-          echo "HTML: s3://code-analysis-results-362631904613-dev/enhanced_findings/CGS-Github-CodeAnalysis.html"
+          echo "JSON: s3://code-analysis-results-362631904613-dev/enhanced_findings/$(date +%Y-%m-%d)/CGS-Github-${{ github.event.repository.name }}-$(git diff --name-only HEAD~1 HEAD | head -1 | xargs basename | cut -d. -f1)-${{ github.run_number }}-*.json"
+          echo "HTML: s3://code-analysis-results-362631904613-dev/enhanced_findings/$(date +%Y-%m-%d)/CGS-Github-${{ github.event.repository.name }}-$(git diff --name-only HEAD~1 HEAD | head -1 | xargs basename | cut -d. -f1)-${{ github.run_number }}-*.html"
