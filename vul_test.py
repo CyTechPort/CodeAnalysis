@@ -11,7 +11,7 @@ def get_user(username):
 
 # Usage that could be exploited: get_user("admin' OR '1'='1")
 
-# Example 2: Command Injectionn
+# Example 2: Command Injection
 import os
 
 def backup_file(filename):
