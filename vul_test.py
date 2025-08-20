@@ -21,7 +21,7 @@ def backup_file(filename):
 
 # Usage that could be exploited: backup_file("important.txt; rm -rf /")
 
-# Example 3: Path Traversal
+# Example 3: Path Traversall
 def read_file(filename):
     # Vulnerable code - no path validation
     with open(filename, 'r') as file:
