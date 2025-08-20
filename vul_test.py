@@ -15,7 +15,7 @@ def get_user(username):
 import os
 
 def backup_file(filename):
-    # Vulnerable code - unsanitized input passed to os.systemm
+    # Vulnerable code - unsanitized input passed to os.system
     os.system("tar -czf /tmp/backup.tar.gz " + filename)
     return "Backup completed"
 
