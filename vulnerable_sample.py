@@ -15,7 +15,7 @@ from flask import Flask, request, render_template_string
 
 app = Flask(__name__)
 
-# 1. Hardcoded credentialss
+# 1. Hardcoded credentials
 DATABASE_PASSWORD = "admin123"
 API_KEY = "sk-1234567890abcdef"
 SECRET_TOKEN = "super_secret_token_12345"
